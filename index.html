@@ -2,112 +2,345 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ガチャゲーム</title>
+<title>英単語 Ultimate App</title>
 
 <style>
+
 body{
-    font-family: sans-serif;
-    background: linear-gradient(135deg,#1e3c72,#2a5298);
-    color:white;
-    text-align:center;
-    margin-top:100px;
+font-family:sans-serif;
+background:#f3f4f6;
+text-align:center;
+padding:30px;
+transition:0.3s;
 }
 
-h1{
-    font-size:40px;
+.dark{
+background:#111827;
+color:white;
+}
+
+#card{
+background:white;
+width:400px;
+margin:auto;
+padding:30px;
+border-radius:16px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.dark #card{
+background:#1f2937;
+}
+
+#word{
+font-size:36px;
+font-weight:bold;
+margin:20px;
+}
+
+#answer{
+font-size:24px;
+color:#2563eb;
+display:none;
 }
 
 button{
-    font-size:20px;
-    padding:15px 40px;
-    border:none;
-    border-radius:10px;
-    background:gold;
-    cursor:pointer;
-    transition:0.2s;
+margin:6px;
+padding:10px 18px;
+font-size:15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
 }
 
-button:hover{
-    transform:scale(1.1);
+.good{background:#22c55e;color:white;}
+.bad{background:#ef4444;color:white;}
+.show{background:#3b82f6;color:white;}
+.quiz{background:#f59e0b;color:white;}
+.darkbtn{background:#6366f1;color:white;}
+
+#choices button{
+display:block;
+width:80%;
+margin:6px auto;
 }
 
-#result{
-    margin-top:40px;
-    font-size:28px;
-    font-weight:bold;
+#progressbar{
+width:400px;
+height:15px;
+background:#ddd;
+margin:20px auto;
+border-radius:10px;
+overflow:hidden;
 }
 
-.star1{color:#cccccc;}
-.star2{color:#66ff66;}
-.star3{color:#66ccff;}
-.star4{color:#cc66ff;}
-.star5{color:gold; font-size:40px;}
-
-#card{
-    margin-top:30px;
-    font-size:30px;
-    opacity:0;
-    transition:0.5s;
+#progress{
+height:100%;
+width:0%;
+background:#22c55e;
 }
+
+textarea{
+width:400px;
+height:140px;
+margin-top:20px;
+}
+
+#graph{
+width:400px;
+height:150px;
+background:white;
+margin:20px auto;
+border-radius:10px;
+}
+
 </style>
 </head>
 
 <body>
 
-<h1>ガチャゲーム</h1>
+<h1>英単語 Ultimate</h1>
 
-<button onclick="gacha()">ガチャを引く</button>
+<div id="card">
 
-<div id="card"></div>
-<div id="result"></div>
+<div id="word">単語を読み込み</div>
+
+<div id="answer"></div>
+
+<div id="choices"></div>
+
+<button class="show" onclick="showAnswer()">答え</button><br>
+
+<button class="good" onclick="mark(true)">覚えた</button>
+<button class="bad" onclick="mark(false)">覚えてない</button><br>
+
+<button class="quiz" onclick="startQuiz()">4択クイズ</button>
+<button class="darkbtn" onclick="toggleDark()">ダークモード</button>
+<button onclick="speak()">🔊発音</button>
+
+</div>
+
+<div id="progressbar">
+<div id="progress"></div>
+</div>
+
+<div id="status"></div>
+
+<canvas id="graph"></canvas>
+
+<h3>単語リスト（英語,意味）</h3>
+
+<textarea id="wordInput">
+create,創造する
+increase,増加する
+reduce,減らす
+suggest,提案する
+require,必要とする
+affect,影響する
+establish,確立する
+approach,近づく
+</textarea><br>
+
+<button onclick="loadWords()">単語読み込み</button>
+<button onclick="reviewWrong()">間違い復習</button>
 
 <script>
 
-const characters = [
-{ name:"スライム", star:1 },
-{ name:"ゴブリン", star:1 },
-{ name:"兵士", star:2 },
-{ name:"弓兵", star:2 },
-{ name:"魔法使い", star:3 },
-{ name:"騎士", star:3 },
-{ name:"ドラゴンナイト", star:4 },
-{ name:"賢者", star:4 },
-{ name:"伝説の勇者", star:5 }
-];
+let words=[]
+let current=null
+let combo=0
+let xp=0
+let level=1
 
-function getRandom(){
-    let r = Math.random();
-
-    if(r < 0.50) return 1;
-    if(r < 0.75) return 2;
-    if(r < 0.90) return 3;
-    if(r < 0.98) return 4;
-    return 5;
+let stats=JSON.parse(localStorage.getItem("stats")) || {
+learned:[],
+wrong:[],
+history:[]
 }
 
-function gacha(){
+function loadWords(){
 
-    const resultText = document.getElementById("result");
-    const card = document.getElementById("card");
+let text=document.getElementById("wordInput").value.trim()
 
-    resultText.textContent = "ガチャ中...";
-    card.style.opacity = 0;
+words=text.split("\n").map(l=>{
+let p=l.split(",")
+return {en:p[0],jp:p[1]}
+})
 
-    setTimeout(()=>{
+nextWord()
 
-        let star = getRandom();
-        let list = characters.filter(c => c.star === star);
-        let chara = list[Math.floor(Math.random()*list.length)];
+}
 
-        card.textContent = chara.name;
+function nextWord(){
 
-        resultText.innerHTML = "★".repeat(star);
+current=words[Math.floor(Math.random()*words.length)]
 
-        resultText.className = "star"+star;
+document.getElementById("word").textContent=current.en
+document.getElementById("answer").textContent=current.jp
+document.getElementById("answer").style.display="none"
+document.getElementById("choices").innerHTML=""
 
-        card.style.opacity = 1;
+updateStatus()
 
-    },1000);
+}
+
+function showAnswer(){
+document.getElementById("answer").style.display="block"
+}
+
+function mark(correct){
+
+if(correct){
+
+combo++
+xp+=10
+
+stats.learned.push(current.en)
+
+}else{
+
+combo=0
+
+stats.wrong.push(current.en)
+
+}
+
+level=Math.floor(xp/100)+1
+
+stats.history.push(stats.learned.length)
+
+save()
+
+drawGraph()
+
+nextWord()
+
+}
+
+function startQuiz(){
+
+current=words[Math.floor(Math.random()*words.length)]
+
+document.getElementById("word").textContent=current.en
+
+let choices=[current]
+
+while(choices.length<4){
+
+let r=words[Math.floor(Math.random()*words.length)]
+
+if(!choices.includes(r)){
+choices.push(r)
+}
+
+}
+
+shuffle(choices)
+
+let html=""
+
+choices.forEach(c=>{
+html+=`<button onclick="answerQuiz('${c.jp}')">${c.jp}</button>`
+})
+
+document.getElementById("choices").innerHTML=html
+
+}
+
+function answerQuiz(ans){
+
+if(ans===current.jp){
+
+alert("正解！")
+xp+=10
+combo++
+
+}else{
+
+alert("不正解")
+combo=0
+
+}
+
+level=Math.floor(xp/100)+1
+
+save()
+
+nextWord()
+
+}
+
+function reviewWrong(){
+
+let set=new Set(stats.wrong)
+
+words=words.filter(w=>set.has(w.en))
+
+nextWord()
+
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark")
+}
+
+function speak(){
+
+let ut=new SpeechSynthesisUtterance(current.en)
+ut.lang="en-US"
+speechSynthesis.speak(ut)
+
+}
+
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1))
+[a[i],a[j]]=[a[j],a[i]]
+}
+}
+
+function updateStatus(){
+
+let total=words.length
+let learned=stats.learned.length
+
+let percent=Math.min(100,(learned/total)*100)
+
+document.getElementById("progress").style.width=percent+"%"
+
+document.getElementById("status").textContent=
+"レベル:"+level+
+"　XP:"+xp+
+"　覚えた:"+learned+
+"/"+total+
+"　コンボ🔥:"+combo
+
+}
+
+function save(){
+localStorage.setItem("stats",JSON.stringify(stats))
+}
+
+function drawGraph(){
+
+let canvas=document.getElementById("graph")
+let ctx=canvas.getContext("2d")
+
+ctx.clearRect(0,0,400,150)
+
+ctx.beginPath()
+
+stats.history.forEach((v,i)=>{
+
+let x=i*5
+let y=150-v
+
+if(i===0) ctx.moveTo(x,y)
+else ctx.lineTo(x,y)
+
+})
+
+ctx.stroke()
 
 }
 
