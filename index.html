@@ -1,3 +1,117 @@
-平田のテスト
-oinari oisi-yo-
-never fail to do は必ず〰️する
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ガチャゲーム</title>
+
+<style>
+body{
+    font-family: sans-serif;
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    color:white;
+    text-align:center;
+    margin-top:100px;
+}
+
+h1{
+    font-size:40px;
+}
+
+button{
+    font-size:20px;
+    padding:15px 40px;
+    border:none;
+    border-radius:10px;
+    background:gold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:scale(1.1);
+}
+
+#result{
+    margin-top:40px;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.star1{color:#cccccc;}
+.star2{color:#66ff66;}
+.star3{color:#66ccff;}
+.star4{color:#cc66ff;}
+.star5{color:gold; font-size:40px;}
+
+#card{
+    margin-top:30px;
+    font-size:30px;
+    opacity:0;
+    transition:0.5s;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ガチャゲーム</h1>
+
+<button onclick="gacha()">ガチャを引く</button>
+
+<div id="card"></div>
+<div id="result"></div>
+
+<script>
+
+const characters = [
+{ name:"スライム", star:1 },
+{ name:"ゴブリン", star:1 },
+{ name:"兵士", star:2 },
+{ name:"弓兵", star:2 },
+{ name:"魔法使い", star:3 },
+{ name:"騎士", star:3 },
+{ name:"ドラゴンナイト", star:4 },
+{ name:"賢者", star:4 },
+{ name:"伝説の勇者", star:5 }
+];
+
+function getRandom(){
+    let r = Math.random();
+
+    if(r < 0.50) return 1;
+    if(r < 0.75) return 2;
+    if(r < 0.90) return 3;
+    if(r < 0.98) return 4;
+    return 5;
+}
+
+function gacha(){
+
+    const resultText = document.getElementById("result");
+    const card = document.getElementById("card");
+
+    resultText.textContent = "ガチャ中...";
+    card.style.opacity = 0;
+
+    setTimeout(()=>{
+
+        let star = getRandom();
+        let list = characters.filter(c => c.star === star);
+        let chara = list[Math.floor(Math.random()*list.length)];
+
+        card.textContent = chara.name;
+
+        resultText.innerHTML = "★".repeat(star);
+
+        resultText.className = "star"+star;
+
+        card.style.opacity = 1;
+
+    },1000);
+
+}
+
+</script>
+
+</body>
+</html>
